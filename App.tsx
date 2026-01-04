@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Layout from './components/Layout';
 import BookGrid from './components/BookGrid';
 import StudyViewer from './components/StudyViewer';
@@ -7,11 +7,48 @@ import { BibleBook, StudyContent } from './types';
 import { generateBibleStudy, generateStudyImage } from './services/gemini';
 
 const App: React.FC = () => {
+  // Estados de Autenticação
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // Estados da Aplicação
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<string>("");
   const [currentStudy, setCurrentStudy] = useState<StudyContent | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Verificar login salvo
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('pastor_auth');
+    if (savedAuth === 'true') {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Credenciais Padrão: pastor / 123456
+    if (username.toLowerCase() === 'pastor' && password === '123456') {
+      setIsLoggedIn(true);
+      setLoginError('');
+      localStorage.setItem('pastor_auth', 'true');
+    } else {
+      setLoginError('Credenciais ministeriais incorretas. Tente novamente.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('pastor_auth');
+    // Limpa campos sensíveis ao sair
+    setUsername('');
+    setPassword('');
+    setShowPassword(false);
+  };
 
   const handleSelectBook = async (book: BibleBook) => {
     setSelectedBook(book);
@@ -51,8 +88,88 @@ const App: React.FC = () => {
     window.print();
   }, []);
 
+  // Tela de Login
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-library flex items-center justify-center p-4">
+        <div className="w-full max-w-md animate-in fade-in zoom-in duration-700">
+          <div className="text-center mb-8">
+            <div className="inline-block p-4 bg-amber-500 text-indigo-950 rounded-3xl shadow-2xl mb-6 shadow-amber-500/20">
+              <i className="fas fa-key text-3xl"></i>
+            </div>
+            <h1 className="serif text-4xl font-bold text-white mb-2">Acesso ao Scriptório</h1>
+            <p className="text-slate-400 font-light italic">Autentique-se para acessar a biblioteca sagrada</p>
+          </div>
+
+          <div className="glass p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+            {/* Brilho decorativo */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl"></div>
+            
+            <form onSubmit={handleLogin} className="space-y-6 relative z-10">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-amber-500 uppercase tracking-widest ml-1">Usuário</label>
+                <div className="relative">
+                  <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                  <input 
+                    type="text" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Seu usuário pastoral"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/5 transition-all outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-amber-500 uppercase tracking-widest ml-1">Senha</label>
+                <div className="relative">
+                  <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                  <input 
+                    type={showPassword ? 'text' : 'password'} 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-slate-600 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/5 transition-all outline-none"
+                    required
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-500 transition-colors p-2"
+                    title={showPassword ? "Ocultar senha" : "Revelar senha"}
+                  >
+                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  </button>
+                </div>
+              </div>
+
+              {loginError && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-3 animate-shake">
+                  <i className="fas fa-exclamation-circle"></i>
+                  {loginError}
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                className="w-full bg-amber-500 text-indigo-950 py-4 rounded-2xl font-bold text-lg hover:bg-amber-400 transition-all shadow-xl shadow-amber-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
+              >
+                Entrar no Scriptório <i className="fas fa-arrow-right text-sm"></i>
+              </button>
+            </form>
+          </div>
+          
+          <div className="text-center mt-8 text-slate-500 text-xs uppercase tracking-widest font-bold">
+            &copy; {new Date().getFullYear()} O Scriptório do Pastor
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Layout>
+    <Layout onLogout={handleLogout}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
         {!currentStudy && !isLoading && (
           <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000">

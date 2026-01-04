@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;
+  onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const [isManualOpen, setIsManualOpen] = useState(false);
 
   return (
@@ -21,15 +22,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <span className="text-[10px] text-amber-500 uppercase font-bold tracking-widest">Excelência Teológica</span>
             </div>
           </div>
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-4 sm:gap-6">
             <button 
               onClick={() => setIsManualOpen(true)}
-              className="text-sm font-semibold text-slate-300 hover:text-amber-500 transition-colors flex items-center gap-2"
+              className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-amber-500 transition-colors flex items-center gap-2"
             >
-              <i className="fas fa-info-circle"></i> Manual
+              <i className="fas fa-info-circle"></i> <span className="hidden sm:inline">Manual</span>
             </button>
-            <div className="w-px h-8 bg-white/10 hidden sm:block"></div>
-            <div className="hidden sm:flex flex-col items-end">
+            
+            <div className="w-px h-8 bg-white/10"></div>
+            
+            {onLogout && (
+              <button 
+                onClick={onLogout}
+                className="text-xs sm:text-sm font-semibold text-red-400/80 hover:text-red-400 transition-colors flex items-center gap-2"
+              >
+                <i className="fas fa-sign-out-alt"></i> <span className="hidden sm:inline">Sair</span>
+              </button>
+            )}
+
+            <div className="hidden lg:flex flex-col items-end border-l border-white/10 pl-6">
               <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Status do Sistema</span>
               <span className="text-xs text-green-400 font-medium flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> Pronto para o Estudo
