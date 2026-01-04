@@ -2,7 +2,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StudyContent } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Verificação segura para evitar erro de "process is not defined" em ambientes de produção
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || '';
+  } catch (e) {
+    return '';
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 /**
  * Gera o conteúdo textual do estudo bíblico de forma ultrarrápida
@@ -19,10 +28,9 @@ export const generateBibleStudy = async (bookName: string): Promise<StudyContent
   Por favor, forneça o conteúdo no formato JSON estruturado.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview", // Mudança para o modelo Flash (mais rápido)
+    model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
-      // Removido thinkingBudget para resposta instantânea
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -112,7 +120,6 @@ export const generateBibleStudy = async (bookName: string): Promise<StudyContent
  * Gera uma imagem artística contextual de forma independente para permitir paralelismo
  */
 export const generateStudyImage = async (bookName: string): Promise<string | undefined> => {
-  // Prompt otimizado para capturar a essência do livro sem precisar do texto do e-book primeiro
   const imagePrompt = `A sacred, cinematic, and deeply symbolic oil painting representing the core theological context and spiritual understanding of the biblical book of ${bookName}. 
   Style: Epic sacred art, warm divine light, ethereal atmosphere, high detail, masterpiece. 
   NO TEXT, NO MODERN OBJECTS, NO FACES.`;
