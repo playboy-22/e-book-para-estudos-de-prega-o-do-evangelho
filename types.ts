@@ -49,7 +49,7 @@ export interface StudyContent {
     concept: string;
     imageKeywords: string;
   };
-  generatedImageBase64?: string; // Armazena a imagem gerada por IA
+  generatedImageBase64?: string;
 }
 
 export interface SavedStudy {
@@ -57,4 +57,15 @@ export interface SavedStudy {
   bookName: string;
   createdAt: string;
   content: StudyContent;
+}
+
+// Declaração para o TypeScript não reclamar do process.env no navegador
+declare global {
+  interface Window {
+    process: {
+      env: {
+        [key: string]: string | undefined;
+      };
+    };
+  }
 }

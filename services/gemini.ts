@@ -3,11 +3,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { StudyContent } from "../types";
 
 /**
- * Função auxiliar para obter a instância da IA com a chave de ambiente.
- * A chave DEVE ser configurada no painel da Vercel (Environment Variables).
+ * Função auxiliar para obter a instância da IA.
+ * Tenta buscar do process.env (Vercel) ou window.process (Shim).
  */
 const getAIInstance = () => {
-  const apiKey = process.env.API_KEY;
+  // @ts-ignore - process pode não estar tipado globalmente em alguns ambientes de build
+  const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) || 
+                 (window as any).process?.env?.API_KEY;
+
   if (!apiKey) {
     throw new Error("API_KEY_MISSING");
   }
@@ -15,7 +18,7 @@ const getAIInstance = () => {
 };
 
 /**
- * Gera o conteúdo textual do estudo bíblico de forma ultrarrápida
+ * Gera o conteúdo textual do estudo bíblico
  */
 export const generateBibleStudy = async (bookName: string): Promise<StudyContent> => {
   const ai = getAIInstance();
@@ -109,17 +112,19 @@ export const generateBibleStudy = async (bookName: string): Promise<StudyContent
     }
   });
 
+  const text = response.text;
+  if (!text) throw new Error("Resposta vazia da IA");
+
   try {
-    const data = JSON.parse(response.text);
-    return data;
+    return JSON.parse(text);
   } catch (error) {
-    console.error("Erro ao processar resposta do Gemini:", error);
+    console.error("Erro ao processar JSON:", text);
     throw new Error("Não foi possível gerar o conteúdo textual.");
   }
 };
 
 /**
- * Gera uma imagem artística contextual de forma independente para permitir paralelismo
+ * Gera uma imagem artística contextual
  */
 export const generateStudyImage = async (bookName: string): Promise<string | undefined> => {
   const ai = getAIInstance();
@@ -130,7 +135,7 @@ export const generateStudyImage = async (bookName: string): Promise<string | und
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: [{ text: imagePrompt }],
+      contents: { parts: [{ text: imagePrompt }] },
       config: {
         imageConfig: {
           aspectRatio: "16:9"
@@ -138,13 +143,16 @@ export const generateStudyImage = async (bookName: string): Promise<string | und
       }
     });
 
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+    const candidate = response.candidates?.[0];
+    if (candidate?.content?.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData) {
+          return `data:image/png;base64,${part.inlineData.data}`;
+        }
       }
     }
   } catch (error) {
-    console.error("Erro ao gerar imagem com Gemini:", error);
+    console.error("Erro ao gerar imagem:", error);
   }
   return undefined;
 };
