@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Biblioteca para conversão de HTML para PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        // Shim para process.env para evitar erros de runtime no navegador
+        window.process = window.process || { env: {} };
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
         
@@ -100,7 +104,6 @@
 </head>
 <body class="bg-library">
     <div id="root"></div>
-    <!-- Script de entrada essencial para o funcionamento no navegador -->
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>

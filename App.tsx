@@ -31,7 +31,6 @@ const App: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Credenciais Padrão: pastor / 123456
     if (username.toLowerCase() === 'pastor' && password === '123456') {
       setIsLoggedIn(true);
       setLoginError('');
@@ -44,7 +43,6 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('pastor_auth');
-    // Limpa campos sensíveis ao sair
     setUsername('');
     setPassword('');
     setShowPassword(false);
@@ -55,9 +53,10 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setCurrentStudy(null);
-    setLoadingStatus("Iniciando Exegese Profunda...");
+    setLoadingStatus("Conectando ao Scriptório Celestial...");
 
     try {
+      // Paralelismo para velocidade máxima
       const [study, imageBase64] = await Promise.all([
         generateBibleStudy(book.name),
         generateStudyImage(book.name)
@@ -70,9 +69,14 @@ const App: React.FC = () => {
 
       setCurrentStudy(completeStudy);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      console.error(err);
-      setError("Houve uma interrupção na conexão com os originais. Por favor, tente novamente.");
+    } catch (err: any) {
+      console.error("Erro crítico na geração do estudo:", err);
+      
+      if (err.message === "API_KEY_MISSING") {
+        setError("Configuração Pendente: A Chave de API (API_KEY) não foi configurada no servidor Vercel.");
+      } else {
+        setError("Houve uma interrupção na conexão com os originais. Verifique sua chave de API e conexão.");
+      }
     } finally {
       setIsLoading(false);
       setLoadingStatus("");
@@ -82,6 +86,7 @@ const App: React.FC = () => {
   const handleBackToLibrary = () => {
     setCurrentStudy(null);
     setSelectedBook(null);
+    setError(null);
   };
 
   const handlePrint = useCallback(() => {
@@ -102,7 +107,6 @@ const App: React.FC = () => {
           </div>
 
           <div className="glass p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
-            {/* Brilho decorativo */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl"></div>
             
             <form onSubmit={handleLogin} className="space-y-6 relative z-10">
@@ -137,7 +141,6 @@ const App: React.FC = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-500 transition-colors p-2"
-                    title={showPassword ? "Ocultar senha" : "Revelar senha"}
                   >
                     <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
@@ -159,10 +162,6 @@ const App: React.FC = () => {
               </button>
             </form>
           </div>
-          
-          <div className="text-center mt-8 text-slate-500 text-xs uppercase tracking-widest font-bold">
-            &copy; {new Date().getFullYear()} O Scriptório do Pastor
-          </div>
         </div>
       </div>
     );
@@ -171,7 +170,7 @@ const App: React.FC = () => {
   return (
     <Layout onLogout={handleLogout}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-        {!currentStudy && !isLoading && (
+        {!currentStudy && !isLoading && !error && (
           <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             <div className="text-center space-y-6 max-w-4xl mx-auto">
               <div className="inline-block px-4 py-1.5 glass rounded-full border border-white/10 mb-4">
@@ -181,11 +180,8 @@ const App: React.FC = () => {
                 O Scriptório do Divino
               </h2>
               <p className="text-slate-400 text-xl lg:text-2xl font-light leading-relaxed serif italic">
-                Sua biblioteca de auxílio ministerial. Escolha o livro da sua próxima jornada e deixe-nos preparar o solo teológico.
+                Sua biblioteca de auxílio ministerial. Escolha o livro da sua próxima jornada.
               </p>
-              <div className="flex justify-center pt-4">
-                 <div className="w-24 h-1 bg-amber-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>
-              </div>
             </div>
             <BookGrid onSelectBook={handleSelectBook} selectedBookName={selectedBook?.name} />
           </div>
@@ -198,17 +194,11 @@ const App: React.FC = () => {
               <div className="absolute inset-0 flex items-center justify-center">
                 <i className="fas fa-quill-pen text-3xl text-amber-500"></i>
               </div>
-              <div className="absolute inset-0 w-32 h-32 rounded-full border border-amber-500/20 blur-xl animate-pulse"></div>
             </div>
             <h3 className="serif text-3xl font-bold text-white mb-3">Compilando Tesouros de {selectedBook?.name}</h3>
             <p className="text-amber-500/80 max-w-sm mx-auto font-bold uppercase tracking-widest text-xs animate-pulse">
               {loadingStatus}
             </p>
-            <div className="mt-12 flex gap-2">
-               <span className="w-2 h-2 rounded-full bg-white/20 animate-bounce delay-75"></span>
-               <span className="w-2 h-2 rounded-full bg-white/20 animate-bounce delay-150"></span>
-               <span className="w-2 h-2 rounded-full bg-white/20 animate-bounce delay-300"></span>
-            </div>
           </div>
         )}
 
@@ -222,40 +212,36 @@ const App: React.FC = () => {
                 <i className="fas fa-chevron-left transition-transform group-hover:-translate-x-1"></i>
                 Retornar ao Scriptório
               </button>
-              
-              <div className="hidden md:flex items-center gap-4 text-xs font-bold text-slate-600 tracking-widest uppercase">
-                 <span>{selectedBook?.division}</span>
-                 <span className="w-1 h-1 rounded-full bg-slate-700"></span>
-                 <span>Capítulo Selecionado</span>
-              </div>
             </div>
-            
             <StudyViewer study={currentStudy} onPrint={handlePrint} />
-            
-            <div className="no-print flex justify-center pb-20 pt-8">
-              <button 
-                onClick={handleBackToLibrary}
-                className="bg-amber-500 text-indigo-950 px-10 py-5 rounded-2xl shadow-2xl shadow-amber-500/20 hover:bg-amber-400 transition-all font-bold flex items-center gap-4 active:scale-95 text-lg"
-              >
-                <i className="fas fa-book-open"></i> Explorar Nova Escritura
-              </button>
-            </div>
           </div>
         )}
 
         {error && (
-          <div className="max-w-md mx-auto glass border border-red-500/20 p-12 rounded-[2rem] text-center shadow-2xl">
+          <div className="max-w-xl mx-auto glass border border-red-500/20 p-12 rounded-[2rem] text-center shadow-2xl animate-in zoom-in">
             <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
-              <i className="fas fa-exclamation-circle text-3xl"></i>
+              <i className="fas fa-exclamation-triangle text-3xl"></i>
             </div>
-            <h3 className="serif text-2xl font-bold text-white mb-3">Falha na Escrita</h3>
-            <p className="text-slate-400 text-sm mb-8 leading-relaxed">Não conseguimos acessar os manuscritos neste momento. Por favor, tente novamente.</p>
-            <button 
-              onClick={() => handleSelectBook(selectedBook!)}
-              className="w-full bg-red-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
-            >
-              Tentar Novamente
-            </button>
+            <h3 className="serif text-2xl font-bold text-white mb-3">Erro de Conexão</h3>
+            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+              {error}
+              <br/><br/>
+              <span className="text-xs text-slate-500 italic">Dica: Se você acabou de adicionar a chave na Vercel, pode levar alguns minutos para propagar.</span>
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={handleBackToLibrary}
+                className="flex-1 bg-white/5 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition-colors"
+              >
+                Voltar
+              </button>
+              <button 
+                onClick={() => handleSelectBook(selectedBook!)}
+                className="flex-1 bg-amber-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-amber-700 transition-colors shadow-lg shadow-amber-600/20"
+              >
+                Tentar Novamente
+              </button>
+            </div>
           </div>
         )}
       </div>

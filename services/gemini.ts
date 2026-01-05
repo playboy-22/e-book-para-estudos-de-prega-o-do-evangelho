@@ -2,21 +2,23 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StudyContent } from "../types";
 
-// Verificação segura para evitar erro de "process is not defined" em ambientes de produção
-const getApiKey = () => {
-  try {
-    return process.env.API_KEY || '';
-  } catch (e) {
-    return '';
+/**
+ * Função auxiliar para obter a instância da IA com a chave de ambiente.
+ * A chave DEVE ser configurada no painel da Vercel (Environment Variables).
+ */
+const getAIInstance = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API_KEY_MISSING");
   }
+  return new GoogleGenAI({ apiKey });
 };
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 /**
  * Gera o conteúdo textual do estudo bíblico de forma ultrarrápida
  */
 export const generateBibleStudy = async (bookName: string): Promise<StudyContent> => {
+  const ai = getAIInstance();
   const prompt = `Você é um teólogo evangélico de classe mundial e pastor experiente. 
   Crie um "Ebook de Estudo Pronto" para o livro de ${bookName} da Bíblia.
   
@@ -120,6 +122,7 @@ export const generateBibleStudy = async (bookName: string): Promise<StudyContent
  * Gera uma imagem artística contextual de forma independente para permitir paralelismo
  */
 export const generateStudyImage = async (bookName: string): Promise<string | undefined> => {
+  const ai = getAIInstance();
   const imagePrompt = `A sacred, cinematic, and deeply symbolic oil painting representing the core theological context and spiritual understanding of the biblical book of ${bookName}. 
   Style: Epic sacred art, warm divine light, ethereal atmosphere, high detail, masterpiece. 
   NO TEXT, NO MODERN OBJECTS, NO FACES.`;
