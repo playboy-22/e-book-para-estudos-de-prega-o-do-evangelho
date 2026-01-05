@@ -2,10 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StudyContent } from "../types";
 
-/**
- * Função para inicializar o cliente Google AI.
- * A API_KEY é injetada automaticamente pelo ambiente.
- */
 const getAI = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
@@ -14,23 +10,30 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-/**
- * Gera o conteúdo textual do estudo bíblico de forma estruturada.
- */
 export const generateBibleStudy = async (bookName: string): Promise<StudyContent> => {
   const ai = getAI();
-  const prompt = `Você é um teólogo evangélico de classe mundial e pastor experiente. 
-  Crie um "Guia de Estudo e Preparação de Sermão" para o livro de ${bookName} da Bíblia.
+  const prompt = `Você é um renomado teólogo e professor de homilética. 
+  Sua tarefa é criar um E-BOOK DE ESTUDO PROFUNDO sobre o livro de ${bookName}.
+  O conteúdo deve ser denso, acadêmico mas devocional, voltado para pastores.
   
-  O conteúdo deve ser em PORTUGUÊS DO BRASIL, com tom solene, inspirador e exegético.
-  O objetivo é auxiliar um pastor na preparação de uma série de mensagens para sua igreja.
-  
-  Por favor, retorne os dados estritamente no formato JSON solicitado.`;
+  Inclua:
+  1. Título criativo para o e-book.
+  2. Introdução abrangente.
+  3. Contexto histórico-cultural detalhado.
+  4. 3 a 5 Temas Teológicos centrais com descrições profundas.
+  5. Esboços de capítulos (agrupados por seções lógicas).
+  6. Estudo de 3 palavras originais (Hebraico para AT, Grego para NT) com transliteração e significado exegético.
+  7. Ideias para uma série de sermões (Título da série e esboço de 4 mensagens).
+  8. Uma aplicação pastoral final impactante.
+  9. Uma "Metáfora Visual" (conceito e descrição) para guiar a arte da capa.
+
+  Responda estritamente em JSON, seguindo o esquema definido. Idioma: Português Brasileiro.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3-pro-preview",
     contents: prompt,
     config: {
+      thinkingConfig: { thinkingBudget: 4000 },
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -107,30 +110,20 @@ export const generateBibleStudy = async (bookName: string): Promise<StudyContent
     }
   });
 
-  const text = response.text;
-  if (!text) throw new Error("A IA não retornou conteúdo.");
-
-  return JSON.parse(text);
+  return JSON.parse(response.text || "{}");
 };
 
-/**
- * Gera uma arte sacra representativa para o e-book.
- */
 export const generateStudyImage = async (bookName: string): Promise<string | undefined> => {
   const ai = getAI();
-  const imagePrompt = `Sacred art, cinematic oil painting representing the spiritual essence of the biblical book of ${bookName}. 
-  Atmosphere: Divine light, ancient textures, theological symbolism, masterpiece, 8k. 
-  NO TEXT, NO MODERN ELEMENTS.`;
+  const imagePrompt = `Epic, high-detail sacred art, oil on canvas style. Visual representation of the biblical book of ${bookName}. Theological symbolism, divine atmosphere, dramatic lighting, rich textures. No text, no modern objects. 4k resolution masterpiece.`;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: { parts: [{ text: imagePrompt }] },
       config: {
-        imageConfig: {
-          aspectRatio: "16:9"
-        }
-      }
+        imageConfig: { aspectRatio: "16:9" }
+      },
     });
 
     for (const part of response.candidates[0].content.parts) {
@@ -139,7 +132,7 @@ export const generateStudyImage = async (bookName: string): Promise<string | und
       }
     }
   } catch (error) {
-    console.error("Erro na geração da imagem sacra:", error);
+    console.error("Erro na geração da imagem:", error);
   }
   return undefined;
 };
