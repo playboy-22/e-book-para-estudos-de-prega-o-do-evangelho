@@ -73,9 +73,9 @@ const App: React.FC = () => {
       console.error("Erro crítico na geração do estudo:", err);
       
       if (err.message === "API_KEY_MISSING") {
-        setError("Configuração Pendente: A Chave de API (API_KEY) não foi configurada no servidor Vercel.");
+        setError("API_KEY_MISSING");
       } else {
-        setError("Houve uma interrupção na conexão com os originais. Verifique sua chave de API e conexão.");
+        setError("Houve uma interrupção na conexão. Verifique sua chave de API e conexão de internet.");
       }
     } finally {
       setIsLoading(false);
@@ -218,22 +218,39 @@ const App: React.FC = () => {
         )}
 
         {error && (
-          <div className="max-w-xl mx-auto glass border border-red-500/20 p-12 rounded-[2rem] text-center shadow-2xl animate-in zoom-in">
+          <div className="max-w-2xl mx-auto glass border border-red-500/20 p-8 lg:p-12 rounded-[2rem] text-center shadow-2xl animate-in zoom-in">
             <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
               <i className="fas fa-exclamation-triangle text-3xl"></i>
             </div>
-            <h3 className="serif text-2xl font-bold text-white mb-3">Erro de Conexão</h3>
-            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-              {error}
-              <br/><br/>
-              <span className="text-xs text-slate-500 italic">Dica: Se você acabou de adicionar a chave na Vercel, pode levar alguns minutos para propagar.</span>
-            </p>
-            <div className="flex gap-4">
+            
+            {error === "API_KEY_MISSING" ? (
+              <div className="space-y-6">
+                <h3 className="serif text-2xl lg:text-3xl font-bold text-white mb-3">Configuração de Servidor Pendente</h3>
+                <div className="text-left bg-black/40 p-6 rounded-2xl border border-white/5 space-y-4">
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    O aplicativo está instalado, mas o acesso à inteligência artificial ainda não foi configurado na sua conta <strong>Vercel</strong>.
+                  </p>
+                  <ol className="text-xs text-slate-400 space-y-2 list-decimal pl-4">
+                    <li>Vá em <strong>Settings > Environment Variables</strong> no painel da Vercel.</li>
+                    <li>Adicione uma variável com o nome <code className="text-amber-500 font-bold">API_KEY</code>.</li>
+                    <li>O valor deve ser sua chave do <strong>Google AI Studio</strong>.</li>
+                    <li>Faça um <strong>Redeploy</strong> na aba Deployments.</li>
+                  </ol>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h3 className="serif text-2xl font-bold text-white mb-3">Erro de Conexão</h3>
+                <p className="text-slate-400 text-sm mb-8">{error}</p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
               <button 
                 onClick={handleBackToLibrary}
                 className="flex-1 bg-white/5 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition-colors"
               >
-                Voltar
+                Voltar à Biblioteca
               </button>
               <button 
                 onClick={() => handleSelectBook(selectedBook!)}
