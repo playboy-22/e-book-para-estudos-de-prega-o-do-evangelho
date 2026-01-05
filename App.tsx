@@ -231,7 +231,7 @@ const App: React.FC = () => {
                     O aplicativo está instalado, mas o acesso à inteligência artificial ainda não foi configurado na sua conta <strong>Vercel</strong>.
                   </p>
                   <ol className="text-xs text-slate-400 space-y-2 list-decimal pl-4">
-                    <li>Vá em <strong>Settings > Environment Variables</strong> no painel da Vercel.</li>
+                    <li>Vá em <strong>Settings &gt; Environment Variables</strong> no painel da Vercel.</li>
                     <li>Adicione uma variável com o nome <code className="text-amber-500 font-bold">API_KEY</code>.</li>
                     <li>O valor deve ser sua chave do <strong>Google AI Studio</strong>.</li>
                     <li>Faça um <strong>Redeploy</strong> na aba Deployments.</li>
