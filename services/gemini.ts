@@ -3,14 +3,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { StudyContent } from "../types";
 
 /**
- * Função auxiliar para obter a instância da IA.
- * Tenta buscar do process.env (Vercel) ou window.process (Shim).
+ * Função para inicializar o cliente Google AI.
+ * A API_KEY é injetada automaticamente pelo ambiente.
  */
-const getAIInstance = () => {
-  // @ts-ignore - process pode não estar tipado globalmente em alguns ambientes de build
-  const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) || 
-                 (window as any).process?.env?.API_KEY;
-
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
   if (!apiKey) {
     throw new Error("API_KEY_MISSING");
   }
@@ -18,19 +15,17 @@ const getAIInstance = () => {
 };
 
 /**
- * Gera o conteúdo textual do estudo bíblico
+ * Gera o conteúdo textual do estudo bíblico de forma estruturada.
  */
 export const generateBibleStudy = async (bookName: string): Promise<StudyContent> => {
-  const ai = getAIInstance();
+  const ai = getAI();
   const prompt = `Você é um teólogo evangélico de classe mundial e pastor experiente. 
-  Crie um "Ebook de Estudo Pronto" para o livro de ${bookName} da Bíblia.
+  Crie um "Guia de Estudo e Preparação de Sermão" para o livro de ${bookName} da Bíblia.
   
-  IMPORTANTE: Todo o conteúdo deve estar em PORTUGUÊS DO BRASIL.
-  O tom deve ser inspirador, profundamente bíblico e PRONTO PARA SER LIDO pelo pastor aos crentes. 
+  O conteúdo deve ser em PORTUGUÊS DO BRASIL, com tom solene, inspirador e exegético.
+  O objetivo é auxiliar um pastor na preparação de uma série de mensagens para sua igreja.
   
-  Inclua uma seção de "Metáfora Visual" que descreva uma imagem ou cena altamente simbólica que ilustre o entendimento central deste livro. 
-  
-  Por favor, forneça o conteúdo no formato JSON estruturado.`;
+  Por favor, retorne os dados estritamente no formato JSON solicitado.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
@@ -113,24 +108,19 @@ export const generateBibleStudy = async (bookName: string): Promise<StudyContent
   });
 
   const text = response.text;
-  if (!text) throw new Error("Resposta vazia da IA");
+  if (!text) throw new Error("A IA não retornou conteúdo.");
 
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("Erro ao processar JSON:", text);
-    throw new Error("Não foi possível gerar o conteúdo textual.");
-  }
+  return JSON.parse(text);
 };
 
 /**
- * Gera uma imagem artística contextual
+ * Gera uma arte sacra representativa para o e-book.
  */
 export const generateStudyImage = async (bookName: string): Promise<string | undefined> => {
-  const ai = getAIInstance();
-  const imagePrompt = `A sacred, cinematic, and deeply symbolic oil painting representing the core theological context and spiritual understanding of the biblical book of ${bookName}. 
-  Style: Epic sacred art, warm divine light, ethereal atmosphere, high detail, masterpiece. 
-  NO TEXT, NO MODERN OBJECTS, NO FACES.`;
+  const ai = getAI();
+  const imagePrompt = `Sacred art, cinematic oil painting representing the spiritual essence of the biblical book of ${bookName}. 
+  Atmosphere: Divine light, ancient textures, theological symbolism, masterpiece, 8k. 
+  NO TEXT, NO MODERN ELEMENTS.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -143,16 +133,13 @@ export const generateStudyImage = async (bookName: string): Promise<string | und
       }
     });
 
-    const candidate = response.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData) {
-          return `data:image/png;base64,${part.inlineData.data}`;
-        }
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
       }
     }
   } catch (error) {
-    console.error("Erro ao gerar imagem:", error);
+    console.error("Erro na geração da imagem sacra:", error);
   }
   return undefined;
 };

@@ -7,24 +7,19 @@ import { BibleBook, StudyContent } from './types';
 import { generateBibleStudy, generateStudyImage } from './services/gemini';
 
 const App: React.FC = () => {
-  // Estados de Autenticação
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
-
-  // Estados da Aplicação
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<string>("");
   const [currentStudy, setCurrentStudy] = useState<StudyContent | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Verificar login salvo
   useEffect(() => {
-    const savedAuth = localStorage.getItem('pastor_auth');
-    if (savedAuth === 'true') {
+    if (localStorage.getItem('pastor_auth') === 'true') {
       setIsLoggedIn(true);
     }
   }, []);
@@ -33,27 +28,22 @@ const App: React.FC = () => {
     e.preventDefault();
     if (username.toLowerCase() === 'pastor' && password === '123456') {
       setIsLoggedIn(true);
-      setLoginError('');
       localStorage.setItem('pastor_auth', 'true');
     } else {
-      setLoginError('Credenciais ministeriais incorretas. Tente novamente.');
+      setLoginError('Credenciais incorretas.');
     }
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('pastor_auth');
-    setUsername('');
-    setPassword('');
-    setShowPassword(false);
   };
 
   const handleSelectBook = async (book: BibleBook) => {
     setSelectedBook(book);
     setIsLoading(true);
     setError(null);
-    setCurrentStudy(null);
-    setLoadingStatus("Conectando ao Scriptório Celestial...");
+    setLoadingStatus("Consultando as Escrituras...");
 
     try {
       const [study, imageBase64] = await Promise.all([
@@ -61,104 +51,41 @@ const App: React.FC = () => {
         generateStudyImage(book.name)
       ]);
       
-      const completeStudy: StudyContent = {
-        ...study,
-        generatedImageBase64: imageBase64
-      };
-
-      setCurrentStudy(completeStudy);
+      setCurrentStudy({ ...study, generatedImageBase64: imageBase64 });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      console.error("Erro crítico na geração do estudo:", err);
-      if (err.message === "API_KEY_MISSING") {
-        setError("API_KEY_MISSING");
-      } else {
-        setError("Houve uma interrupção na conexão. Verifique sua chave de API e conexão de internet.");
-      }
+      setError(err.message === "API_KEY_MISSING" ? "API_KEY_MISSING" : "Erro de conexão.");
     } finally {
       setIsLoading(false);
-      setLoadingStatus("");
     }
   };
-
-  const handleBackToLibrary = () => {
-    setCurrentStudy(null);
-    setSelectedBook(null);
-    setError(null);
-  };
-
-  const handlePrint = useCallback(() => {
-    window.print();
-  }, []);
 
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-library flex items-center justify-center p-4">
-        <div className="w-full max-w-md animate-in fade-in zoom-in duration-700">
+        <div className="w-full max-w-md glass p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
           <div className="text-center mb-8">
-            <div className="inline-block p-4 bg-amber-500 text-indigo-950 rounded-3xl shadow-2xl mb-6 shadow-amber-500/20">
-              <i className="fas fa-key text-3xl"></i>
+            <div className="inline-block p-4 bg-amber-500 text-indigo-950 rounded-full mb-4">
+              <i className="fas fa-key text-2xl"></i>
             </div>
-            <h1 className="serif text-4xl font-bold text-white mb-2">Acesso ao Scriptório</h1>
-            <p className="text-slate-400 font-light italic">Autentique-se para acessar a biblioteca sagrada</p>
+            <h1 className="serif text-3xl font-bold text-white">Acesso Ministerial</h1>
           </div>
-
-          <div className="glass p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl"></div>
-            
-            <form onSubmit={handleLogin} className="space-y-6 relative z-10">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500 uppercase tracking-widest ml-1">Usuário</label>
-                <div className="relative">
-                  <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                  <input 
-                    type="text" 
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Seu usuário pastoral"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/5 transition-all outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-amber-500 uppercase tracking-widest ml-1">Senha</label>
-                <div className="relative">
-                  <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                  <input 
-                    type={showPassword ? 'text' : 'password'} 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-slate-600 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/5 transition-all outline-none"
-                    required
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-500 transition-colors p-2"
-                  >
-                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                  </button>
-                </div>
-              </div>
-
-              {loginError && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-3 animate-shake">
-                  <i className="fas fa-exclamation-circle"></i>
-                  {loginError}
-                </div>
-              )}
-
-              <button 
-                type="submit"
-                className="w-full bg-amber-500 text-indigo-950 py-4 rounded-2xl font-bold text-lg hover:bg-amber-400 transition-all shadow-xl shadow-amber-500/20 active:scale-[0.98] flex items-center justify-center gap-3"
-              >
-                Entrar no Scriptório <i className="fas fa-arrow-right text-sm"></i>
-              </button>
-            </form>
-          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="Usuário" 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-amber-500"
+              onChange={e => setUsername(e.target.value)}
+            />
+            <input 
+              type="password" 
+              placeholder="Senha" 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-amber-500"
+              onChange={e => setPassword(e.target.value)}
+            />
+            {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+            <button className="w-full bg-amber-500 text-indigo-950 py-4 rounded-xl font-bold hover:bg-amber-400">Entrar</button>
+          </form>
         </div>
       </div>
     );
@@ -166,96 +93,47 @@ const App: React.FC = () => {
 
   return (
     <Layout onLogout={handleLogout}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-        {!currentStudy && !isLoading && !error && (
-          <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <div className="text-center space-y-6 max-w-4xl mx-auto">
-              <div className="inline-block px-4 py-1.5 glass rounded-full border border-white/10 mb-4">
-                 <span className="text-xs text-amber-500 font-bold uppercase tracking-[0.3em]">Ambiente de Preparação</span>
-              </div>
-              <h2 className="serif text-5xl lg:text-7xl font-bold text-white tracking-tight drop-shadow-2xl">
-                O Scriptório do Divino
-              </h2>
-              <p className="text-slate-400 text-xl lg:text-2xl font-light leading-relaxed serif italic">
-                Sua biblioteca de auxílio ministerial. Escolha o livro da sua próxima jornada.
-              </p>
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        {isLoading && (
+          <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6"></div>
+            <h2 className="serif text-2xl text-white">{loadingStatus}</h2>
+          </div>
+        )}
+
+        {!isLoading && currentStudy && (
+          <div className="animate-in fade-in duration-700">
+            <button onClick={() => setCurrentStudy(null)} className="no-print mb-8 text-slate-400 hover:text-white flex items-center gap-2">
+              <i className="fas fa-arrow-left"></i> Voltar à Biblioteca
+            </button>
+            <StudyViewer study={currentStudy} />
+          </div>
+        )}
+
+        {!isLoading && !currentStudy && !error && (
+          <div className="space-y-12">
+            <div className="text-center">
+              <h1 className="serif text-5xl font-bold text-white mb-4">O Scriptório do Pastor</h1>
+              <p className="text-slate-400 text-lg">Selecione um livro para gerar seu guia de estudo exclusivo.</p>
             </div>
             <BookGrid onSelectBook={handleSelectBook} selectedBookName={selectedBook?.name} />
           </div>
         )}
 
-        {isLoading && (
-          <div className="min-h-[70vh] flex flex-col items-center justify-center text-center animate-in zoom-in duration-500">
-            <div className="relative mb-12">
-              <div className="w-32 h-32 border-[6px] border-white/5 border-t-amber-500 rounded-full animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <i className="fas fa-quill-pen text-3xl text-amber-500"></i>
-              </div>
+        {error === "API_KEY_MISSING" && (
+          <div className="max-w-xl mx-auto glass p-8 rounded-3xl border border-red-500/20 text-center">
+            <i className="fas fa-plug text-4xl text-red-500 mb-4"></i>
+            <h2 className="serif text-2xl text-white mb-4">Configuração Necessária</h2>
+            <div className="text-left bg-black/30 p-4 rounded-xl text-sm text-slate-300 space-y-2">
+              <p>O sistema precisa da sua chave de API para funcionar:</p>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Acesse o painel da Vercel.</li>
+                <li>Vá em <strong>Settings {" > "} Environment Variables</strong>.</li>
+                <li>Adicione <strong>API_KEY</strong> com sua chave do Google AI Studio.</li>
+                <li>Faça um novo <strong>Redeploy</strong>.</li>
+              </ol>
             </div>
-            <h3 className="serif text-3xl font-bold text-white mb-3">Compilando Tesouros de {selectedBook?.name}</h3>
-            <p className="text-amber-500/80 max-w-sm mx-auto font-bold uppercase tracking-widest text-xs animate-pulse">
-              {loadingStatus}
-            </p>
-          </div>
-        )}
-
-        {currentStudy && !isLoading && (
-          <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
-            <div className="no-print flex items-center justify-between mb-12">
-              <button 
-                onClick={handleBackToLibrary}
-                className="flex items-center gap-3 text-slate-400 hover:text-amber-500 font-bold transition-all group px-4 py-2 rounded-lg hover:bg-white/5"
-              >
-                <i className="fas fa-chevron-left transition-transform group-hover:-translate-x-1"></i>
-                Retornar ao Scriptório
-              </button>
-            </div>
-            <StudyViewer study={currentStudy} onPrint={handlePrint} />
-          </div>
-        )}
-
-        {error && (
-          <div className="max-w-2xl mx-auto glass border border-red-500/20 p-8 lg:p-12 rounded-[2rem] text-center shadow-2xl animate-in zoom-in">
-            <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
-              <i className="fas fa-exclamation-triangle text-3xl"></i>
-            </div>
-            
-            {error === "API_KEY_MISSING" ? (
-              <div className="space-y-6">
-                <h3 className="serif text-2xl lg:text-3xl font-bold text-white mb-3">Configuração de Servidor Pendente</h3>
-                <div className="text-left bg-black/40 p-6 rounded-2xl border border-white/5 space-y-4">
-                  <p className="text-slate-300 text-sm leading-relaxed">
-                    O aplicativo está instalado, mas o acesso à inteligência artificial ainda não foi configurado na sua conta <strong>Vercel</strong>.
-                  </p>
-                  <ol className="text-xs text-slate-400 space-y-2 list-decimal pl-4">
-                    <li>Vá em <strong>Settings {" > "} Environment Variables</strong> no painel da Vercel.</li>
-                    <li>Adicione uma variável com o nome <code className="text-amber-500 font-bold">API_KEY</code>.</li>
-                    <li>O valor deve ser sua chave do <strong>Google AI Studio</strong>.</li>
-                    <li>Faça um <strong>Redeploy</strong> na aba Deployments.</li>
-                  </ol>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <h3 className="serif text-2xl font-bold text-white mb-3">Erro de Conexão</h3>
-                <p className="text-slate-400 text-sm mb-8">{error}</p>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              <button 
-                onClick={handleBackToLibrary}
-                className="flex-1 bg-white/5 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition-colors"
-              >
-                Voltar à Biblioteca
-              </button>
-              <button 
-                onClick={() => handleSelectBook(selectedBook!)}
-                className="flex-1 bg-amber-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-amber-700 transition-colors shadow-lg shadow-amber-600/20"
-              >
-                Tentar Novamente
-              </button>
-            </div>
+            <button onClick={() => window.location.reload()} className="mt-6 bg-white/10 text-white px-6 py-2 rounded-lg hover:bg-white/20">Já configurei, recarregar</button>
           </div>
         )}
       </div>
